@@ -23,13 +23,64 @@ app.css.append_css({
     "external_url": cssURL
 })
 #Read CSV
-df = pd.read_csv('pokemon/pokemon_alopez247.csv')
+#df = pd.read_csv('pokemon/pokemon_alopez247.csv')
 
 # App Layout
 app.layout = html.Div(children=[
     html.H1(children="PokeDex", style={
         'paddingLeft': '14em',
         'fontFamily': FONT_FAMILY
+    }),
+
+    html.Div(children = [
+        html.Div(
+            html.H3('Left Div'),
+            style = {
+                "height": 550,
+                "width": '25%',
+                "float" : 'left',
+                "background-color":"white",
+                "border":"solid black"
+
+            }
+        ),
+        html.Div(
+            html.H3('Middle Div'),
+            style = {
+                "height": 400,
+                "width": '50%',
+                "float" : 'left',
+                "background-color":"white",
+                "border":"solid black"
+
+
+            }
+        ),
+        html.Div(
+            html.H3('Right Div'),
+            style = {
+                "height": 550,
+                "width": '20%',
+                "float" : 'left',
+                "background-color":"white",
+                "border":"solid black"
+
+
+            }
+        ),
+
+
+    ],
+    style = {
+            "width":"100%",
+            "height":"600px",
+            "background-color":"#CFD8DC",
+            "padding-top":"20px",
+            "padding-left":"15px",
+            "padding-right":"15px"
     })
 
 ])
+
+if __name__ == '__main__':
+    app.run_server(debug=True)
