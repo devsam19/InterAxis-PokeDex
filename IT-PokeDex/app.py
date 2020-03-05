@@ -14,6 +14,8 @@ import json
 import os
 import math
 
+from dash.exceptions import PreventUpdate
+
 from sklearn.preprocessing import MinMaxScaler
 
 #Style Sheets
@@ -41,6 +43,9 @@ app.layout = html.Div(children=[
         'paddingLeft': '14em',
         'fontFamily': FONT_FAMILY
     }),
+
+    # The memory store reverts to the default on every page refresh
+
 
     html.Div(children = [
         html.Div(
@@ -77,7 +82,9 @@ app.layout = html.Div(children=[
             #html.H3('Middle Div'),
             children=[
                 html.Div(
-                    id='scatter-plot',
+                    dcc.Graph(
+                        id='scatter-plot',
+                    ),
                     style={
 
                         'width': '33%',
@@ -102,8 +109,10 @@ app.layout = html.Div(children=[
 
             }
         ),
-        html.Div(
-            html.H3('Right Div'),
+        html.Div([
+            html.H3('Pokemon Information'),
+            html.Pre(id='click-data'),
+        ],
             style = {
                 "height": 550,
                 "width": '20%',
@@ -129,7 +138,7 @@ app.layout = html.Div(children=[
 ])
 
 @app.callback(
-    Output(component_id='scatter-plot', component_property='children'),
+    Output(component_id='scatter-plot', component_property='figure'),
     [Input(component_id='xaxis-dropdown', component_property='value'),
     Input(component_id='yaxis-dropdown', component_property='value')]
 )
@@ -155,34 +164,85 @@ def updateScatterPlot(xAxis, yAxis):
     denum = math.sqrt(sum((i ** 2) for i in y_list))
     for index in range(len(y_list)):
         y_list[index] = y_list[index]/denum
-        
+
+    figure = {
+        'data': [
+            {'x': x_list, 'y': y_list,
+             'mode': 'markers',
+             'marker': {
+                 'color': '#0277bd',
+                 'size': 15,
+                 'opacity': 0.5,
+                 'line': {'width': 0.5, 'color': 'white'}
+             }
+             }
+        ],
+        'layout': {
+            'title': 'Scatter Plot',
+            'hovermode': 'closest',
+            'paper_bgcolor': '#e1f5fe',
+            'plot_bgcolor': '#e1f5fe',
+            'height': 500,
+            'width': "75%",
+            'clickmode': 'event+select'
+
+        },
+
+    }
+
     #Create graph and return
-    return dcc.Graph(
-        id='scatterPokemonGraph',
-        figure={
-            'data': [
-                {'x': x_list, 'y': y_list,
-                 'mode': 'markers',
-                 'marker': {
-                     'color': '#0277bd',
-                     'size': 15,
-                     'opacity': 0.5,
-                     'line': {'width': 0.5, 'color': 'white'}
-                 }
-                 }
-            ],
-            'layout': {
-                'title': 'Scatter Plot',
-                'hovermode': 'closest',
-                'paper_bgcolor': '#e1f5fe',
-                'plot_bgcolor': '#e1f5fe',
-                'height': 500,
-                'width' : "75%"
+    return figure
 
-            },
+@app.callback(
+    Output('click-data', 'children'),
+    [Input('scatter-plot', 'clickData')])
 
-        }
-    )
+def display_click_data(clickData):
+    print(clickData)
+    print(type(clickData))
+    data_point = dict()
+    if clickData != None:
+        #Point Number gives us the row from the dataframe
+        point = clickData['points'][0]['pointNumber']
+        filtered_df = df[(df.Number == point)]
+        print(filtered_df.head())
+
+        #
+        data_point = dict()
+        data_point['points'] = []
+        value_dict = {}
+        value_dict['Name'] = str(filtered_df.Name.item())
+        value_dict['Type_1'] = str(filtered_df.Type_1.item())
+        value_dict['Type_2'] = str(filtered_df.Type_2.item())
+
+        value_dict['Total'] = str(filtered_df.Total.item())
+
+        value_dict['HP'] = str(filtered_df.HP.item())
+
+        value_dict['Attack'] = str(filtered_df.Attack.item())
+
+        value_dict['Defense'] = str(filtered_df.Defense.item())
+
+        value_dict['Sp_Attack'] = str(filtered_df.Sp_Atk.item())
+
+        value_dict['Sp_Defence'] = str(filtered_df.Sp_Def.item())
+
+        value_dict['Color'] = str(filtered_df.Color.item())
+
+        value_dict['Has Mega Evolution'] = str(filtered_df.hasMegaEvolution.item())
+
+        value_dict['Height (m)'] = str(filtered_df.Height_m.item())
+
+        value_dict['Weight (kg)'] = str(filtered_df.Weight_kg.item())
+
+        value_dict['Catch Rate'] = str(filtered_df.Catch_Rate.item())
+
+        data_point['points'].append(value_dict)
+
+    #print(clickData['points'])
+    #print(clickData['points'][0][0]['pointNumber'])
+
+    return json.dumps(data_point, indent=2)
 
 if __name__ == '__main__':
     app.run_server(debug=True)
