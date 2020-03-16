@@ -13,10 +13,13 @@ import csv
 import json
 import os
 import math
-
+from sklearn.decomposition import PCA
+from sklearn.preprocessing import StandardScaler
 from dash.exceptions import PreventUpdate
-
 from sklearn.preprocessing import MinMaxScaler
+from collections import defaultdict
+from sklearn import preprocessing
+
 
 #Style Sheets
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
@@ -28,13 +31,22 @@ app.css.append_css({
     "external_url": cssURL
 })
 #Read CSV
-df = pd.read_csv('data/pokemon_alopez247.csv')
+df1 = pd.read_csv('data/pokemon_alopez247.csv')
 
 #Get names of all the attributes to populate the dropdown for both axes
-axes_list = []
-for col in df.columns:
-    axes_list.append(col)
+axes_list = ['Total', 'HP', 'Attack', 'Defense', 'Sp_Atk', 'Sp_Def', 'Speed', 'Height_m', 'Weight_kg', 'Catch_Rate']
+# for col in df.columns:
+#     axes_list.append(col)
 
+df = df1[axes_list]
+
+df_scaled_prev = df[axes_list]
+print("rrrrrr", df_scaled_prev)
+
+df_scaled_mid = StandardScaler().fit_transform(df_scaled_prev)
+df_scaled = pd.DataFrame(df_scaled_mid, columns = df_scaled_prev.columns)
+print("eeeeee", df_scaled)
+#print(df)
 #Default axes
 
 # App Layout
@@ -57,7 +69,7 @@ app.layout = html.Div(children=[
                         options = [
                             {'label': i, 'value': i} for i in axes_list
                         ],
-                        value="Attack"
+                        #value="Attack"
                     )
                 ]),
                 html.Div([
@@ -66,7 +78,7 @@ app.layout = html.Div(children=[
                         options = [
                             {'label': i, 'value': i} for i in axes_list
                         ],
-                        value="Catch_Rate"
+                        #value="Catch_Rate"
                     )
                 ])
             ],
@@ -177,37 +189,147 @@ app.layout = html.Div(children=[
 )
 
 def updateScatterPlot(xAxis, yAxis,n_clicks):
-    print(n_clicks)
-    #Get DF
-    #print(xAxis)
-    x_list = df[xAxis].values.tolist()
-    y_list = df[yAxis].values.tolist()
+
+    x = df.loc[:, axes_list].values
+    y = df1.loc[:,['Name']].values
+
+    #initial scatter plot using PCA
+    if not xAxis and not yAxis and not n_clicks:
+        x = StandardScaler().fit_transform(x)
+        pca = PCA(n_components=2)
+        principalComponents = pca.fit_transform(x)
+        principalDf = pd.DataFrame(data = principalComponents, columns = ['principal_component_1', 'principal_component_2'])
+        finalDf = pd.concat([principalDf, df1[['Name']]], axis = 1)
+        x_list = finalDf['principal_component_1']
+        y_list = finalDf['principal_component_2']
+            
+    #whenever transform button is pushed
+    elif n_clicks:
+        x_dict_p=defaultdict(int)
+        y_dict_p=defaultdict(int)
+        x_dict_n=defaultdict(int)
+        y_dict_n=defaultdict(int)
+        x_transform=defaultdict(int)
+        y_transform=defaultdict(int)
+        x_list = []
+        y_list = []
+        #sleep(1)
+        with open('x-positive.csv') as csvfile:
+            no_of_points_xp = len(csvfile.readlines())
+        with open('x-positive.csv') as csvfile:
+            test = list(csvfile)
+            
+            if no_of_points_xp > 0:
+                
+                for row in test:
+                    row = row.split(',')    
+                    i=1
+                    for col in axes_list:
+                        x_dict_p[col] += float(row[i])
+                        i+=1
+                for col in axes_list:
+                    x_dict_p[col] = x_dict_p[col]/no_of_points_xp
+        
+        print("sums1 {}".format(x_dict_p))
+        
+        with open('x-negative.csv') as csvfile:
+            no_of_points_xn = len(csvfile.readlines())
+        with open('x-negative.csv') as csvfile:
+            test = list(csvfile)
+            
+            if no_of_points_xn > 0:
+                
+                for row in test:
+                    row = row.split(',')    
+                    i=1
+                    for col in axes_list:
+                        x_dict_n[col] += float(row[i])
+                        i+=1
+                for col in axes_list:
+                    x_dict_n[col] = x_dict_n[col]/no_of_points_xn
+        print("sums2 {}".format(x_dict_n))
+
+        for col in axes_list:
+            x_transform[col] = x_dict_p[col] - x_dict_n[col]
+
+        #x_transform = StandardScaler().fit_transform(x_transform)
+
+        for index,row in df_scaled.iterrows():
+            val=0
+            for col in x_transform:
+                val+=x_transform[col]*row[col]
+            x_list.append(val)
+        
+        #x_list = preprocessing.normalize([x_list]).tolist()
+        print("ppppppp", x_list)
+        #print("ppppppp", type(x_list))
 
 
-    #print(df.head())
+#=======================================================================
 
-    #print(len(x_list),len(y_list))
-    #Get Max and Min values for axes and normalize the points
-    denum = math.sqrt(sum((i**2) for i in x_list))
-    for index in range(len(x_list)):
-        x_list[index] = x_list[index]/denum
+        with open('y-positive.csv') as csvfile:
+            no_of_points_yp = len(csvfile.readlines())
+        with open('y-positive.csv') as csvfile:
+            test = list(csvfile)
+            
+            if no_of_points_yp > 0:
+                
+                for row in test:
+                    row = row.split(',')    
+                    i=1
+                    for col in axes_list:
+                        y_dict_p[col] += float(row[i])
+                        i+=1
+                for col in axes_list:
+                    y_dict_p[col] = y_dict_p[col]/no_of_points_yp
+        
+        print("sums1 {}".format(y_dict_p))
+        
+        with open('y-negative.csv') as csvfile:
+            no_of_points_yn = len(csvfile.readlines())
+        with open('y-negative.csv') as csvfile:
+            test = list(csvfile)
+            
+            if no_of_points_yn > 0:
+                
+                for row in test:
+                    row = row.split(',')    
+                    i=1
+                    for col in axes_list:
+                        y_dict_n[col] += float(row[i])
+                        i+=1
+                for col in axes_list:
+                    y_dict_n[col] = y_dict_n[col]/no_of_points_yn
+        print("sums2 {}".format(y_dict_n))
 
-    #print(x_list)
+        for col in axes_list:
+            y_transform[col] = y_dict_p[col] - y_dict_n[col]
 
-    denum = math.sqrt(sum((i ** 2) for i in y_list))
-    for index in range(len(y_list)):
-        y_list[index] = y_list[index]/denum
+        for index,row in df_scaled.iterrows():
+            val=0
+            for col in y_transform:
+                val+=y_transform[col]*row[col]
+            y_list.append(val)
+        print("yyyyyy {}".format(y_list))
+        # y_list = preprocessing.normalize([y_list]).tolist()
+        # print("yyyyyy {}".format(y_list))
 
+
+    # when xaxis and yaxis is given and transform button is not pushed
+    else:
+        # TODO
+        a=2
+    
     figure = {
         'data': [
             {'x': x_list, 'y': y_list,
              'mode': 'markers',
              'marker': {
                  'color': '#0277bd',
-                 'size': 15,
+                 'size': 10,
                  'opacity': 0.5,
-                 'line': {'width': 0.5, 'color': 'white'}
-             }
+                 'line': {'width': 0.5, 'color': 'white'},
+                }
              }
         ],
         'layout': {
@@ -231,22 +353,20 @@ def updateScatterPlot(xAxis, yAxis,n_clicks):
     [Input('scatter-plot', 'clickData')])
 
 def display_click_data(clickData):
-    print(clickData)
-    print(type(clickData))
+    #print(clickData)
+    #print(type(clickData))
     data_point = dict()
     if clickData != None:
         #Point Number gives us the row from the dataframe
         point = clickData['points'][0]['pointNumber']
-        filtered_df = df[(df.Number == point)]
-        print(filtered_df.head())
+        filtered_df = df1[(df1.Number == point)]
+        #print(filtered_df.head())
 
         #
         data_point = dict()
         data_point['points'] = []
         value_dict = {}
         value_dict['Name'] = str(filtered_df.Name.item())
-        value_dict['Type_1'] = str(filtered_df.Type_1.item())
-        value_dict['Type_2'] = str(filtered_df.Type_2.item())
 
         value_dict['Total'] = str(filtered_df.Total.item())
 
@@ -260,9 +380,7 @@ def display_click_data(clickData):
 
         value_dict['Sp_Defence'] = str(filtered_df.Sp_Def.item())
 
-        value_dict['Color'] = str(filtered_df.Color.item())
-
-        value_dict['Has Mega Evolution'] = str(filtered_df.hasMegaEvolution.item())
+        value_dict['Speed'] = str(filtered_df.Speed.item())
 
         value_dict['Height (m)'] = str(filtered_df.Height_m.item())
 
@@ -271,9 +389,6 @@ def display_click_data(clickData):
         value_dict['Catch Rate'] = str(filtered_df.Catch_Rate.item())
 
         data_point['points'].append(value_dict)
-
-    #print(clickData['points'])
-    #print(clickData['points'][0][0]['pointNumber'])
 
     return json.dumps(data_point, indent=2)
 
@@ -284,8 +399,8 @@ def display_click_data(clickData):
     [Input('scatter-plot', 'clickData'),
     Input('xnbutton', 'n_clicks')])
 
-#negativex
-def update_output(clickData,n_clicks,):
+#x-negative
+def update_output(clickData,n_clicks):
     import csv
     import os
     x = open('x-negative.csv','a')
@@ -308,16 +423,11 @@ def update_output(clickData,n_clicks,):
     if clickData != None and countcsv == count - 1:
         #Point Number gives us the row from the dataframe
         point = clickData['points'][0]['pointNumber']
-        filtered_df = df[(df.Number == point)]
-        #print(filtered_df.head())
+        filtered_df = df_scaled.iloc[point]
 
-        #
         data_point = dict()
         data_point['points'] = []
         value_dict = {}
-        value_dict['Name'] = str(filtered_df.Name.item())
-        value_dict['Type_1'] = str(filtered_df.Type_1.item())
-        value_dict['Type_2'] = str(filtered_df.Type_2.item())
 
         value_dict['Total'] = str(filtered_df.Total.item())
 
@@ -331,29 +441,23 @@ def update_output(clickData,n_clicks,):
 
         value_dict['Sp_Defence'] = str(filtered_df.Sp_Def.item())
 
-        value_dict['Color'] = str(filtered_df.Color.item())
-
-        value_dict['Has Mega Evolution'] = str(filtered_df.hasMegaEvolution.item())
+        value_dict['Speed'] = str(filtered_df.Speed.item())
 
         value_dict['Height (m)'] = str(filtered_df.Height_m.item())
 
         value_dict['Weight (kg)'] = str(filtered_df.Weight_kg.item())
-        
-        value_dict['Catch Rate'] = str(filtered_df.Catch_Rate.item())
 
+        value_dict['Catch Rate'] = str(filtered_df.Catch_Rate.item())
+        
         data_point['points'].append(value_dict)
         
-        temp = str(point) + ',' +value_dict['Name'] +','+ value_dict['Type_1'] +','+ value_dict['Type_2'] +','+value_dict['Total'] +','+value_dict['HP'] +','+value_dict['Attack'] +','+value_dict['Defense']+','+value_dict['Sp_Attack'] +','+value_dict['Sp_Defence']+','+ value_dict['Color'] + ','+value_dict['Has Mega Evolution']+','+value_dict['Height (m)']+','+value_dict['Weight (kg)'] +','+ value_dict['Catch Rate']+'\n' 
+        temp = str(point) +','+value_dict['Total'] +','+value_dict['HP'] +','+value_dict['Attack'] +','+value_dict['Defense']+','+value_dict['Sp_Attack'] +','+value_dict['Sp_Defence']+','+value_dict['Speed']+','+value_dict['Height (m)']+','+value_dict['Weight (kg)'] +','+ value_dict['Catch Rate']+'\n' 
 
         xnegative.write(temp)
 
     k = 'Point added to negative x axis'
     xnegative.close()
     #return k
-
-    
-
-
 
 
 @app.callback(
@@ -362,8 +466,8 @@ def update_output(clickData,n_clicks,):
     [Input('scatter-plot', 'clickData'),
     Input('xpbutton', 'n_clicks')])
 
-#negativex
-def update_output(clickData,n_clicks,):
+#x-positive
+def update_output(clickData,n_clicks):
     import csv
     count = 0
     x = open('x-positive.csv','a')
@@ -384,16 +488,10 @@ def update_output(clickData,n_clicks,):
     if clickData != None and countcsv == count - 1:
         #Point Number gives us the row from the dataframe
         point = clickData['points'][0]['pointNumber']
-        filtered_df = df[(df.Number == point)]
-        #print(filtered_df.head())
-
-        #
+        filtered_df = df_scaled.iloc[point]        
         data_point = dict()
         data_point['points'] = []
         value_dict = {}
-        value_dict['Name'] = str(filtered_df.Name.item())
-        value_dict['Type_1'] = str(filtered_df.Type_1.item())
-        value_dict['Type_2'] = str(filtered_df.Type_2.item())
 
         value_dict['Total'] = str(filtered_df.Total.item())
 
@@ -407,19 +505,17 @@ def update_output(clickData,n_clicks,):
 
         value_dict['Sp_Defence'] = str(filtered_df.Sp_Def.item())
 
-        value_dict['Color'] = str(filtered_df.Color.item())
-
-        value_dict['Has Mega Evolution'] = str(filtered_df.hasMegaEvolution.item())
+        value_dict['Speed'] = str(filtered_df.Speed.item())
 
         value_dict['Height (m)'] = str(filtered_df.Height_m.item())
 
         value_dict['Weight (kg)'] = str(filtered_df.Weight_kg.item())
-        
-        value_dict['Catch Rate'] = str(filtered_df.Catch_Rate.item())
 
+        value_dict['Catch Rate'] = str(filtered_df.Catch_Rate.item())
+        
         data_point['points'].append(value_dict)
         
-        temp = str(point) + ',' +value_dict['Name'] +','+ value_dict['Type_1'] +','+ value_dict['Type_2'] +','+value_dict['Total'] +','+value_dict['HP'] +','+value_dict['Attack'] +','+value_dict['Defense']+','+value_dict['Sp_Attack'] +','+value_dict['Sp_Defence']+','+ value_dict['Color'] + ','+value_dict['Has Mega Evolution']+','+value_dict['Height (m)']+','+value_dict['Weight (kg)'] +','+ value_dict['Catch Rate']+'\n' 
+        temp = str(point) + ',' +value_dict['Total'] +','+value_dict['HP'] +','+value_dict['Attack'] +','+value_dict['Defense']+','+value_dict['Sp_Attack'] +','+value_dict['Sp_Defence']+','+value_dict['Speed']+','+value_dict['Height (m)']+','+value_dict['Weight (kg)'] +','+ value_dict['Catch Rate']+'\n' 
 
         xnegative.write(temp)
 
@@ -435,8 +531,8 @@ def update_output(clickData,n_clicks,):
     [Input('scatter-plot', 'clickData'),
     Input('ynbutton', 'n_clicks')])
 
-#negativex
-def update_output(clickData,n_clicks,):
+#y-negative
+def update_output(clickData,n_clicks):
     import csv
     x = open('y-negative.csv','a')
     x.close()
@@ -457,16 +553,11 @@ def update_output(clickData,n_clicks,):
     if clickData != None and countcsv == count - 1:
         #Point Number gives us the row from the dataframe
         point = clickData['points'][0]['pointNumber']
-        filtered_df = df[(df.Number == point)]
-        #print(filtered_df.head())
+        filtered_df = df_scaled.iloc[point]
 
-        #
         data_point = dict()
         data_point['points'] = []
         value_dict = {}
-        value_dict['Name'] = str(filtered_df.Name.item())
-        value_dict['Type_1'] = str(filtered_df.Type_1.item())
-        value_dict['Type_2'] = str(filtered_df.Type_2.item())
 
         value_dict['Total'] = str(filtered_df.Total.item())
 
@@ -480,19 +571,17 @@ def update_output(clickData,n_clicks,):
 
         value_dict['Sp_Defence'] = str(filtered_df.Sp_Def.item())
 
-        value_dict['Color'] = str(filtered_df.Color.item())
-
-        value_dict['Has Mega Evolution'] = str(filtered_df.hasMegaEvolution.item())
+        value_dict['Speed'] = str(filtered_df.Speed.item())
 
         value_dict['Height (m)'] = str(filtered_df.Height_m.item())
 
         value_dict['Weight (kg)'] = str(filtered_df.Weight_kg.item())
-        
-        value_dict['Catch Rate'] = str(filtered_df.Catch_Rate.item())
 
+        value_dict['Catch Rate'] = str(filtered_df.Catch_Rate.item())
+        
         data_point['points'].append(value_dict)
         
-        temp = str(point) + ',' +value_dict['Name'] +','+ value_dict['Type_1'] +','+ value_dict['Type_2'] +','+value_dict['Total'] +','+value_dict['HP'] +','+value_dict['Attack'] +','+value_dict['Defense']+','+value_dict['Sp_Attack'] +','+value_dict['Sp_Defence']+','+ value_dict['Color'] + ','+value_dict['Has Mega Evolution']+','+value_dict['Height (m)']+','+value_dict['Weight (kg)'] +','+ value_dict['Catch Rate']+'\n' 
+        temp = str(point) + ','+value_dict['Total'] +','+value_dict['HP'] +','+value_dict['Attack'] +','+value_dict['Defense']+','+value_dict['Sp_Attack'] +','+value_dict['Sp_Defence']+','+value_dict['Speed']+','+value_dict['Height (m)']+','+value_dict['Weight (kg)'] +','+ value_dict['Catch Rate']+'\n' 
 
         xnegative.write(temp)
 
@@ -508,8 +597,8 @@ def update_output(clickData,n_clicks,):
     [Input('scatter-plot', 'clickData'),
     Input('ypbutton', 'n_clicks')])
 
-#negativex
-def update_output(clickData,n_clicks,):
+#y-positive
+def update_output(clickData,n_clicks):
     import csv
     count = 0
     x = open('y-positive.csv','a')
@@ -530,16 +619,11 @@ def update_output(clickData,n_clicks,):
     if clickData != None and countcsv == count - 1:
         #Point Number gives us the row from the dataframe
         point = clickData['points'][0]['pointNumber']
-        filtered_df = df[(df.Number == point)]
-        #print(filtered_df.head())
+        filtered_df = df_scaled.iloc[point]
 
-        #
         data_point = dict()
         data_point['points'] = []
         value_dict = {}
-        value_dict['Name'] = str(filtered_df.Name.item())
-        value_dict['Type_1'] = str(filtered_df.Type_1.item())
-        value_dict['Type_2'] = str(filtered_df.Type_2.item())
 
         value_dict['Total'] = str(filtered_df.Total.item())
 
@@ -553,19 +637,17 @@ def update_output(clickData,n_clicks,):
 
         value_dict['Sp_Defence'] = str(filtered_df.Sp_Def.item())
 
-        value_dict['Color'] = str(filtered_df.Color.item())
-
-        value_dict['Has Mega Evolution'] = str(filtered_df.hasMegaEvolution.item())
+        value_dict['Speed'] = str(filtered_df.Speed.item())
 
         value_dict['Height (m)'] = str(filtered_df.Height_m.item())
 
         value_dict['Weight (kg)'] = str(filtered_df.Weight_kg.item())
-        
-        value_dict['Catch Rate'] = str(filtered_df.Catch_Rate.item())
 
+        value_dict['Catch Rate'] = str(filtered_df.Catch_Rate.item())
+        
         data_point['points'].append(value_dict)
         
-        temp = str(point) + ',' +value_dict['Name'] +','+ value_dict['Type_1'] +','+ value_dict['Type_2'] +','+value_dict['Total'] +','+value_dict['HP'] +','+value_dict['Attack'] +','+value_dict['Defense']+','+value_dict['Sp_Attack'] +','+value_dict['Sp_Defence']+','+ value_dict['Color'] + ','+value_dict['Has Mega Evolution']+','+value_dict['Height (m)']+','+value_dict['Weight (kg)'] +','+ value_dict['Catch Rate']+'\n' 
+        temp = str(point) +','+value_dict['Total'] +','+value_dict['HP'] +','+value_dict['Attack'] +','+value_dict['Defense']+','+value_dict['Sp_Attack'] +','+value_dict['Sp_Defence']+','+value_dict['Speed']+','+value_dict['Height (m)']+','+value_dict['Weight (kg)'] +','+ value_dict['Catch Rate']+'\n' 
 
         xnegative.write(temp)
 
