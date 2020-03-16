@@ -64,6 +64,86 @@ app.layout = html.Div(children=[
             #html.H3('Left Div'),
             children=[
                 html.Div([
+                    html.P("Total"),
+                    dcc.Slider(
+                            id='slider-Total',
+                            min=0,
+                            max=20,
+                            step=0.5,
+                            value=0,
+                        ),
+                    html.P("HP"),
+                    dcc.Slider(
+                            id='slider-HP',
+                            min=0,
+                            max=20,
+                            step=0.5,
+                            value=0,
+                        ),
+                    html.P("Attack"),
+                    dcc.Slider(
+                            id='slider-Attack',
+                            min=0,
+                            max=20,
+                            step=0.5,
+                            value=0,
+                        ),
+                    html.P("Defense"),
+                    dcc.Slider(
+                            id='slider-Defence',
+                            min=0,
+                            max=20,
+                            step=0.5,
+                            value=0,
+                        ),
+                    html.P("Special-Attack"),
+                    dcc.Slider(
+                            id='slider-spAttack',
+                            min=0,
+                            max=20,
+                            step=0.5,
+                            value=0,
+                        ),
+                    html.P("Special-Defense"),
+                    dcc.Slider(
+                            id='slider-spDefence',
+                            min=0,
+                            max=20,
+                            step=0.5,
+                            value=0,
+                        ),
+                    html.P("Speed"),
+                    dcc.Slider(
+                        id='slider-Speed',
+                        min=0,
+                        max=20,
+                        step=0.5,
+                        value=0,
+                    ),
+                    html.P("Height"),
+                    dcc.Slider(
+                        id='slider-Height',
+                        min=0,
+                        max=20,
+                        step=0.5,
+                        value=0,
+                    ),
+                    html.P("Weight"),
+                    dcc.Slider(
+                        id='slider-Weight',
+                        min=0,
+                        max=20,
+                        step=0.5,
+                        value=0,
+                    ),
+                    html.P("Catch Rate"),
+                    dcc.Slider(
+                        id='slider-CatchRate',
+                        min=0,
+                        max=20,
+                        step=0.5,
+                        value=0,
+                    ),
                     dcc.Dropdown(
                         id = 'xaxis-dropdown',
                         options = [
@@ -91,10 +171,91 @@ app.layout = html.Div(children=[
         html.Div(
             #html.H3('Middle Div'),
             children=[
-                html.Div(
+                html.Div([
                     dcc.Graph(
                         id='scatter-plot',
                     ),
+html.P("Total"),
+                    dcc.Slider(
+                            id='slider-Totalx',
+                            min=0,
+                            max=20,
+                            step=0.5,
+                            value=0,
+                        ),
+                    html.P("HP"),
+                    dcc.Slider(
+                            id='slider-HPx',
+                            min=0,
+                            max=20,
+                            step=0.5,
+                            value=0,
+                        ),
+                    html.P("Attack"),
+                    dcc.Slider(
+                            id='slider-Attackx',
+                            min=0,
+                            max=20,
+                            step=0.5,
+                            value=0,
+                        ),
+                    html.P("Defense"),
+                    dcc.Slider(
+                            id='slider-Defencex',
+                            min=0,
+                            max=20,
+                            step=0.5,
+                            value=0,
+                        ),
+                    html.P("Special-Attack"),
+                    dcc.Slider(
+                            id='slider-spAttackx',
+                            min=0,
+                            max=20,
+                            step=0.5,
+                            value=0,
+                        ),
+                    html.P("Special-Defense"),
+                    dcc.Slider(
+                            id='slider-spDefencex',
+                            min=0,
+                            max=20,
+                            step=0.5,
+                            value=0,
+                        ),
+                    html.P("Speed"),
+                    dcc.Slider(
+                        id='slider-Speedx',
+                        min=0,
+                        max=20,
+                        step=0.5,
+                        value=0,
+                    ),
+                    html.P("Height"),
+                    dcc.Slider(
+                        id='slider-Heightx',
+                        min=0,
+                        max=20,
+                        step=0.5,
+                        value=0,
+                    ),
+                    html.P("Weight"),
+                    dcc.Slider(
+                        id='slider-Weightx',
+                        min=0,
+                        max=20,
+                        step=0.5,
+                        value=0,
+                    ),
+                    html.P("Catch Rate"),
+                    dcc.Slider(
+                        id='slider-CatchRatex',
+                        min=0,
+                        max=20,
+                        step=0.5,
+                        value=0,
+                    ),
+                ],
                     style={
 
                         'width': '33%',
@@ -181,15 +342,23 @@ app.layout = html.Div(children=[
 
 ])
 
+
+#Add Input to the callback for each slider (y and x) and subseequently add a parameter to the function
+#slider values are directly accessible from arguments. Make sure to check range of each slider attribute
+
 @app.callback(
     Output(component_id='scatter-plot', component_property='figure'),
     [Input(component_id='xaxis-dropdown', component_property='value'),
     Input(component_id='yaxis-dropdown', component_property='value'),
-    Input('transform', 'n_clicks')]
+    Input('transform', 'n_clicks'),
+    Input(component_id='slider-Total', component_property='value'),
+    Input(component_id='slider-HP', component_property='value')]
 )
 
-def updateScatterPlot(xAxis, yAxis,n_clicks):
+def updateScatterPlot(xAxis, yAxis,n_clicks, yTotal, yHP):
 
+    print("got ytotal", yTotal)
+    print("got yhp", yHP)
     x = df.loc[:, axes_list].values
     y = df1.loc[:,['Name']].values
 
