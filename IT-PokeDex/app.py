@@ -86,7 +86,9 @@ app.layout = html.Div(children=[
                             0.5: '0.5',
                             1: '1',
                         },
+
                     ),
+
                     html.Br(),
                     html.P("HP"),
                     dcc.Slider(
@@ -414,31 +416,46 @@ app.layout = html.Div(children=[
                     ),
                 html.Div([
                     #html.Br(),
-                    html.P("Select X-Axis "),
+                    #html.P("Select X-Axis "),
                     dcc.Dropdown(
                         id = 'xaxis-dropdown',
                         options = [
                             {'label': i, 'value': i} for i in axes_list
                         ],
-                        #value="Attack"
+                        placeholder="Select X Axis",
+                        style = {"bottom" : "100%", },
+
+                        value="Attack"
                     ),
                     #html.Br(),
-                    html.P("Select Y-Axis "),
-                    dcc.Dropdown(
+                    #html.P("Select Y-Axis "),
+
+                ],
+                    style={ "float" : "left", "display" : "inline-block", "width" : "40%" , "padding-right" : "5px",
+                            "padding-top" : "5px"
+
+                    }
+                    
+                ),
+
+                html.Div([
+                        dcc.Dropdown(
                         id = 'yaxis-dropdown',
                         options = [
                             {'label': i, 'value': i} for i in axes_list
                         ],
-                        #value="Catch_Rate"
+                        placeholder="Select Y Axis",
+                        #style={ "display" : "inline-block"}
+                        value="Catch_Rate"
                     )
                 ],
-                    style={"margin" : "5px", "padding" : "2px"}
+                    style={"float": "right", "display": "inline-block", "width": "40%", "padding-top" : "5px"},
                 )
                 ],
 
                     style={
 
-                        'width': '33%',
+                        #'width': '33%',
                         'display': 'inline-block',
                         'boxSizing': 'border-box',
                         'fontFamily': "Arial",
@@ -475,11 +492,78 @@ app.layout = html.Div(children=[
 
         html.Div([
             #html.H4('Click here'),
-            html.Button('X -ve', id='xnbutton'),
-            html.Button('X +ve', id='xpbutton'),
-            html.Button('Y -ve', id='ynbutton'),
-            html.Button('Y +ve', id='ypbutton'),
-            html.Button('Transform', id='transform'),
+
+            dcc.ConfirmDialogProvider(children= html.Button('X -ve', id='xnbutton', style = {
+                "z-index": "0",
+                "margin-top" : "15px",
+                "margin" : "1px",
+                "outline": "0",
+                "background": "#03A9F4",
+                "width": "49%",
+                "border": "0",
+                "padding": "5px",
+                "color": "#FFFFFF",
+                "font-size": "14px",
+                "float" : "left"
+            }),
+                message="Sent to X -VE"),
+
+            dcc.ConfirmDialogProvider(children= html.Button('X +ve', id='xpbutton', style = {
+                "z-index": "0",
+                "margin-top" : "15px",
+                "margin" : "1px",
+                "outline": "0",
+                "background": "#03A9F4",
+                "width": "49%",
+                "border": "0",
+                "padding": "5px",
+                "color": "#FFFFFF",
+                "font-size": "14px",
+                "float" : "left"
+            }),
+                message= "Sent to X +VE"),
+
+            dcc.ConfirmDialogProvider(children=html.Button('Y -ve', id='ynbutton', style = {
+                "z-index": "0",
+                "margin" : "1px",
+                "outline": "0",
+                "background": "#03A9F4",
+                "width": "49%",
+                "border": "0",
+                "padding": "5px",
+                "color": "#FFFFFF",
+                "font-size": "14px",
+                "float" : "left"
+            }),
+                message="Sent to Y -VE"),
+
+            dcc.ConfirmDialogProvider(children=html.Button('Y +ve', id='ypbutton', style = {
+                "z-index": "0",
+                "margin" : "1px",
+                "outline": "0",
+                "background": "#03A9F4",
+                "width": "49%",
+                "border": "0",
+                "padding": "5px",
+                "color": "#FFFFFF",
+                "font-size": "14px",
+                "float" : "left"
+            }),
+                message="Sent to Y +VE"),
+
+            html.Button('Transform', id='transform', style = {
+                "z-index": "0",
+                "margin-top" : "15px",
+                "margin" : "1px",
+                "outline": "0",
+                "background": "#4CAF50",
+                "width": "100%",
+                "border": "0",
+                "padding": "5px",
+                "color": "#FFFFFF",
+                "font-size": "14px"
+            }),
+
 
             html.Div(id='output3',
              children='Enter a value and press submit'),
