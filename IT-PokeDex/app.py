@@ -14,7 +14,7 @@ import json
 import os
 import math
 from sklearn.decomposition import PCA
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, scale
 from dash.exceptions import PreventUpdate
 from sklearn.preprocessing import MinMaxScaler
 from collections import defaultdict
@@ -41,13 +41,19 @@ axes_list = ['Total', 'HP', 'Attack', 'Defense', 'Sp_Atk', 'Sp_Def', 'Speed', 'H
 df = df1[axes_list]
 
 df_scaled_prev = df[axes_list]
-print("rrrrrr", df_scaled_prev)
+#print("rrrrrr", df_scaled_prev)
 
 df_scaled_mid = StandardScaler().fit_transform(df_scaled_prev)
 df_scaled = pd.DataFrame(df_scaled_mid, columns = df_scaled_prev.columns)
-print("eeeeee", df_scaled)
+#print("eeeeee", df_scaled)
 #print(df)
 #Default axes
+
+def is_any_non_zero(list_of_values):
+    for i in list_of_values:
+        if i is not 0:
+            return True
+    return False
 
 # App Layout
 app.layout = html.Div(children=[
@@ -524,18 +530,40 @@ app.layout = html.Div(children=[
     Input(component_id='yaxis-dropdown', component_property='value'),
     Input('transform', 'n_clicks'),
     Input(component_id='slider-Total', component_property='value'),
-    Input(component_id='slider-HP', component_property='value')]
+    Input(component_id='slider-HP', component_property='value'),
+    Input(component_id='slider-Attack', component_property='value'),
+    Input(component_id='slider-Defence', component_property='value'),
+    Input(component_id='slider-spAttack', component_property='value'),
+    Input(component_id='slider-spDefence', component_property='value'),
+    Input(component_id='slider-Speed', component_property='value'),
+    Input(component_id='slider-Height', component_property='value'),
+    Input(component_id='slider-Weight', component_property='value'),
+    Input(component_id='slider-CatchRate', component_property='value'),
+    Input(component_id='slider-Totalx', component_property='value'),
+    Input(component_id='slider-HPx', component_property='value'),
+    Input(component_id='slider-Attackx', component_property='value'),
+    Input(component_id='slider-Defencex', component_property='value'),
+    Input(component_id='slider-spAttackx', component_property='value'),
+    Input(component_id='slider-spDefencex', component_property='value'),
+    Input(component_id='slider-Speedx', component_property='value'),
+    Input(component_id='slider-Heightx', component_property='value'),
+    Input(component_id='slider-Weightx', component_property='value'),
+    Input(component_id='slider-CatchRatex', component_property='value')
+    ]
 )
 
-def updateScatterPlot(xAxis, yAxis,n_clicks, yTotal, yHP):
+def updateScatterPlot(xAxis, yAxis,n_clicks, yTotal, yHP, yAttack, yDefence, yspAttack, yspDefence, ySpeed, yHeight, yWeight, yCatchRate, 
+                                             xTotal, xHP, xAttack, xDefence, xspAttack, xspDefence, xSpeed, xHeight, xWeight, xCatchRate):
 
-    print("got ytotal", yTotal)
-    print("got yhp", yHP)
+    # print("\n"+ str(yAttack )+ "\n"+str( yDefence)+ "\n"+str(yspAttack)+ "\n"+ str(yspDefence)+ "\n"+ str(ySpeed)+ "\n"+ str(yHeight)+ "\n"+ str(yWeight)+ "\n"+str(yCatchRate)+ "\n"+str(xTotal)+ "\n"+ str(xHP)+ "\n"+str(xAttack)+ "\n"+str(xDefence)+ "\n"+str(xspAttack)+ "\n"+str(xspDefence)+ "\n"+str(xSpeed)+ "\n"+str(xHeight)+ "\n"+str(xWeight)+ "\n"+str(xCatchRate))
+    list_of_slider_values = [yTotal, yHP, yAttack, yDefence, yspAttack, yspDefence, ySpeed, yHeight, yWeight, yCatchRate, 
+                             xTotal, xHP, xAttack, xDefence, xspAttack, xspDefence, xSpeed, xHeight, xWeight, xCatchRate]
+
     x = df.loc[:, axes_list].values
     y = df1.loc[:,['Name']].values
 
     #initial scatter plot using PCA
-    if not xAxis and not yAxis and not n_clicks:
+    if not xAxis and not yAxis and not n_clicks and not is_any_non_zero(list_of_slider_values):
         x = StandardScaler().fit_transform(x)
         pca = PCA(n_components=2)
         principalComponents = pca.fit_transform(x)
@@ -543,9 +571,8 @@ def updateScatterPlot(xAxis, yAxis,n_clicks, yTotal, yHP):
         finalDf = pd.concat([principalDf, df1[['Name']]], axis = 1)
         x_list = finalDf['principal_component_1']
         y_list = finalDf['principal_component_2']
-            
     #whenever transform button is pushed
-    elif n_clicks:
+    elif not xAxis and not yAxis and (n_clicks or is_any_non_zero(list_of_slider_values)):
         x_dict_p=defaultdict(int)
         y_dict_p=defaultdict(int)
         x_dict_n=defaultdict(int)
@@ -555,112 +582,189 @@ def updateScatterPlot(xAxis, yAxis,n_clicks, yTotal, yHP):
         x_list = []
         y_list = []
         #sleep(1)
-        with open('x-positive.csv') as csvfile:
-            no_of_points_xp = len(csvfile.readlines())
-        with open('x-positive.csv') as csvfile:
-            test = list(csvfile)
-            
-            if no_of_points_xp > 0:
-                
-                for row in test:
-                    row = row.split(',')    
-                    i=1
+        if n_clicks:
+            with open('x-positive.csv') as csvfile:
+                no_of_points_xp = len(csvfile.readlines())
+            with open('x-positive.csv') as csvfile:
+                test = list(csvfile)
+                if no_of_points_xp > 0:
+                    
+                    for row in test:
+                        row = row.split(',')    
+                        i=1
+                        for col in axes_list:
+                            x_dict_p[col] += float(row[i])
+                            i+=1
                     for col in axes_list:
-                        x_dict_p[col] += float(row[i])
-                        i+=1
-                for col in axes_list:
-                    x_dict_p[col] = x_dict_p[col]/no_of_points_xp
-        
-        print("sums1 {}".format(x_dict_p))
-        
-        with open('x-negative.csv') as csvfile:
-            no_of_points_xn = len(csvfile.readlines())
-        with open('x-negative.csv') as csvfile:
-            test = list(csvfile)
+                        x_dict_p[col] = x_dict_p[col]/no_of_points_xp
             
-            if no_of_points_xn > 0:
-                
-                for row in test:
-                    row = row.split(',')    
-                    i=1
-                    for col in axes_list:
-                        x_dict_n[col] += float(row[i])
-                        i+=1
-                for col in axes_list:
-                    x_dict_n[col] = x_dict_n[col]/no_of_points_xn
-        print("sums2 {}".format(x_dict_n))
-
-        for col in axes_list:
-            x_transform[col] = x_dict_p[col] - x_dict_n[col]
-
-        #x_transform = StandardScaler().fit_transform(x_transform)
-
-        for index,row in df_scaled.iterrows():
-            val=0
-            for col in x_transform:
-                val+=x_transform[col]*row[col]
-            x_list.append(val)
-        
-        #x_list = preprocessing.normalize([x_list]).tolist()
-        print("ppppppp", x_list)
-        #print("ppppppp", type(x_list))
-
-
-#=======================================================================
-
-        with open('y-positive.csv') as csvfile:
-            no_of_points_yp = len(csvfile.readlines())
-        with open('y-positive.csv') as csvfile:
-            test = list(csvfile)
+            print("sums1 {}".format(x_dict_p))
             
-            if no_of_points_yp > 0:
+            with open('x-negative.csv') as csvfile:
+                no_of_points_xn = len(csvfile.readlines())
+            with open('x-negative.csv') as csvfile:
+                test = list(csvfile)
                 
-                for row in test:
-                    row = row.split(',')    
-                    i=1
+                if no_of_points_xn > 0:
+                    
+                    for row in test:
+                        row = row.split(',')    
+                        i=1
+                        for col in axes_list:
+                            x_dict_n[col] += float(row[i])
+                            i+=1
                     for col in axes_list:
-                        y_dict_p[col] += float(row[i])
-                        i+=1
-                for col in axes_list:
-                    y_dict_p[col] = y_dict_p[col]/no_of_points_yp
-        
-        print("sums1 {}".format(y_dict_p))
-        
-        with open('y-negative.csv') as csvfile:
-            no_of_points_yn = len(csvfile.readlines())
-        with open('y-negative.csv') as csvfile:
-            test = list(csvfile)
+                        x_dict_n[col] = x_dict_n[col]/no_of_points_xn
+            print("sums2 {}".format(x_dict_n))
+
+            for col in axes_list:
+                x_transform[col] = x_dict_p[col] - x_dict_n[col]
+            x_transform_list = []
+            for col in axes_list:
+                x_transform_list.append(x_transform[col]) 
+            #x_transform_list.reshape(-1, 1)
+            #x_transform_scaled = StandardScaler().fit_transform(x_transform_list)
+            x_transform_list = scale(x_transform_list)
+            list_of_x_values = list_of_slider_values[10:]
+            if is_any_non_zero(list_of_x_values):
+                i=-1
+                for x_vals in list_of_x_values:
+                    i+=1
+                    if x_vals is not 0:
+                        x_transform_list[i] = x_vals
+                        
+
+            for index,row in df_scaled.iterrows():
+                val=0
+                i=0
+                for col in x_transform:
+                    val+=x_transform_list[i]*row[col]
+                    i+=1
+                x_list.append(val)
             
-            if no_of_points_yn > 0:
+            #x_list = preprocessing.normalize([x_list]).tolist()
+            print("xxxxxxx", x_list)
+            #print("ppppppp", type(x_list))
+
+
+    #=======================================================================
+
+            with open('y-positive.csv') as csvfile:
+                no_of_points_yp = len(csvfile.readlines())
+            with open('y-positive.csv') as csvfile:
+                test = list(csvfile)
                 
-                for row in test:
-                    row = row.split(',')    
-                    i=1
+                if no_of_points_yp > 0:
+                    
+                    for row in test:
+                        row = row.split(',')    
+                        i=1
+                        for col in axes_list:
+                            y_dict_p[col] += float(row[i])
+                            i+=1
                     for col in axes_list:
-                        y_dict_n[col] += float(row[i])
-                        i+=1
+                        y_dict_p[col] = y_dict_p[col]/no_of_points_yp
+            
+            print("sums1 {}".format(y_dict_p))
+            
+            with open('y-negative.csv') as csvfile:
+                no_of_points_yn = len(csvfile.readlines())
+            with open('y-negative.csv') as csvfile:
+                test = list(csvfile)
+                
+                if no_of_points_yn > 0:
+                    
+                    for row in test:
+                        row = row.split(',')    
+                        i=1
+                        for col in axes_list:
+                            y_dict_n[col] += float(row[i])
+                            i+=1
+                    for col in axes_list:
+                        y_dict_n[col] = y_dict_n[col]/no_of_points_yn
+            print("sums2 {}".format(y_dict_n))
+
+            for col in axes_list:
+                y_transform[col] = y_dict_p[col] - y_dict_n[col]
+
+            y_transform_list = []
+            for col in axes_list:
+                y_transform_list.append(y_transform[col]) 
+            #x_transform_list.reshape(-1, 1)
+            #x_transform_scaled = StandardScaler().fit_transform(x_transform_list)
+            y_transform_list = scale(y_transform_list)
+            list_of_y_values = list_of_slider_values[:10]
+            if is_any_non_zero(list_of_y_values):
+                i=-1
+                for y_vals in list_of_y_values:
+                    i+=1
+                    if y_vals is not 0:
+                        y_transform_list[i] = y_vals
+
+            for index,row in df_scaled.iterrows():
+                val=0
+                i=0
+                for col in y_transform:
+                    val+=y_transform_list[i]*row[col]
+                    i+=1
+                y_list.append(val)
+            print("yyyyyy {}".format(y_list))
+        
+        else:
+            x_transform_list = [0 for i in range(10)]
+            y_transform_list = [0 for i in range(10)]
+            list_of_x_values = list_of_slider_values[10:]
+            if is_any_non_zero(list_of_x_values):
+                i=-1
+                for x_vals in list_of_x_values:
+                    i+=1
+                    if x_vals is not 0:
+                        x_transform_list[i] = x_vals
+                        
+            for index,row in df_scaled.iterrows():
+                val=0
+                i=0
                 for col in axes_list:
-                    y_dict_n[col] = y_dict_n[col]/no_of_points_yn
-        print("sums2 {}".format(y_dict_n))
+                    val+=x_transform_list[i]*row[col]
+                    i+=1
+                x_list.append(val)
+            
+            print("xxxxxxx", x_list)
 
-        for col in axes_list:
-            y_transform[col] = y_dict_p[col] - y_dict_n[col]
+            list_of_y_values = list_of_slider_values[:10]
+            if is_any_non_zero(list_of_y_values):
+                i=-1
+                for y_vals in list_of_y_values:
+                    i+=1
+                    if y_vals is not 0:
+                        y_transform_list[i] = y_vals
 
-        for index,row in df_scaled.iterrows():
-            val=0
-            for col in y_transform:
-                val+=y_transform[col]*row[col]
-            y_list.append(val)
-        print("yyyyyy {}".format(y_list))
-        # y_list = preprocessing.normalize([y_list]).tolist()
-        # print("yyyyyy {}".format(y_list))
-
+            for index,row in df_scaled.iterrows():
+                val=0
+                i=0
+                for col in axes_list:
+                    val+=y_transform_list[i]*row[col]
+                    i+=1
+                y_list.append(val)
+            print("yyyyyy {}".format(y_list))
 
     # when xaxis and yaxis is given and transform button is not pushed
-    else:
+    elif xAxis and yAxis:
         # TODO
         a=2
+        x_list = df_scaled[xAxis].tolist()
+        y_list = df_scaled[yAxis].tolist()
     
+    elif xAxis or yAxis:
+        x = StandardScaler().fit_transform(x)
+        pca = PCA(n_components=2)
+        principalComponents = pca.fit_transform(x)
+        principalDf = pd.DataFrame(data = principalComponents, columns = ['principal_component_1', 'principal_component_2'])
+        finalDf = pd.concat([principalDf, df1[['Name']]], axis = 1)
+        x_list = finalDf['principal_component_1']
+        y_list = finalDf['principal_component_2']
+    x_list = scale(x_list)
+    y_list = scale(y_list)
     figure = {
         'data': [
             {'x': x_list, 'y': y_list,
@@ -685,7 +789,6 @@ def updateScatterPlot(xAxis, yAxis,n_clicks, yTotal, yHP):
         },
 
     }
-
     #Create graph and return
     return figure
 
